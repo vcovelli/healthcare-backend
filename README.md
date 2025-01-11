@@ -96,3 +96,15 @@ POST /appointments/
     "updated_at": "2025-01-10T20:58:03.192615Z"
 }
 ```
+
+## **Admin Panel**
+
+- **URL**: `http://127.0.0.1:8000/admin/`
+- **Credentials**: Use the superuser account created earlier.
+- **Features**: Manage appointments (create, edit, delete) via the admin interface.
+
+## **Technologies Used**
+
+- **Django**: Python web framework.
+- **Django REST Framework**: For building REST APIs.
+- **SQLite**: Default database for local development.
