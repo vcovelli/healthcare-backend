@@ -70,3 +70,29 @@ GET /appointments/ #
     }
 ]
 ```
+### **2. Create a New Appointment**
+```http
+POST /appointments/
+```
+
+**Description:** Add a new appointment.
+
+**Request Body:**
+```json
+{
+    "title": "Doctor's Appointment",
+    "description": "Annual check-up",
+    "date_time": "2025-01-15T10:00:00Z"
+}
+```
+**Response:**
+```json
+{
+    "id": 1,
+    "title": "Doctor's Appointment",
+    "description": "Annual check-up",
+    "date_time": "2025-01-15T10:00:00Z",
+    "created_at": "2025-01-10T20:58:03.192615Z",
+    "updated_at": "2025-01-10T20:58:03.192615Z"
+}
+```
