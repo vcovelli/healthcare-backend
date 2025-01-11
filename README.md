@@ -53,10 +53,11 @@ The server will start at: http://127.0.0.1:8000/
 
 ### **1. Retrieve All Appointments**
 ```http
-GET /appointments/
+GET /appointments/ #
 ```
-Description: Fetch a list of all saved appointments.
-Response:
+**Description:** Fetch a list of all saved appointments.
+
+**Response:**
 ```json
 [
     {
