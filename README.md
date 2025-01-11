@@ -1,5 +1,3 @@
-# healthcare-backend
-
 # **Healthcare Backend**
 
 A backend service built with **Django** and **Django REST Framework** to manage appointments for the healthcare project.
@@ -57,5 +55,17 @@ The server will start at: http://127.0.0.1:8000/
 ```http
 GET /appointments/
 ```
-
-
+Description: Fetch a list of all saved appointments.
+Response:
+```json
+[
+    {
+        "id": 1,
+        "title": "Doctor's Appointment",
+        "description": "Annual check-up",
+        "date_time": "2025-01-15T10:00:00Z",
+        "created_at": "2025-01-10T20:58:03.192615Z",
+        "updated_at": "2025-01-10T20:58:03.192615Z"
+    }
+]
+```
