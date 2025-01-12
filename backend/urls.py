@@ -17,8 +17,10 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from django.http import HttpResponse
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("appointments/", include("appointments.urls")), # Include appointment URLs
+    path("", lambda request: HttpResponse("Welcome to the Appointments API!")),
 ]
