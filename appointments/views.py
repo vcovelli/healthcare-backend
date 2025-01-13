@@ -1,8 +1,13 @@
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Appointment
 from .serializers import AppointmentSerializer
+
+class AppointmentDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = Appointment.objects.all()
+    serializer_class = AppointmentSerializer
 
 class AppointmentListCreateView(APIView):
     def get(self, request):
