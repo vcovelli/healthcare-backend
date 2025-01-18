@@ -100,7 +100,16 @@ class CreateProfileView(APIView):
         # Validate the request data and create the profile
         serializer = ProfileSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+
+            # Create the user
+            new_user = User.objects.create_user(
+                username=serializer.validated_data["username"],
+                password=serializer.validated_data["password"],
+                email=serializer.validated_data["email"]
+            )
+
+            # Create the profile with the role
+            serializer.save(user=new_user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
