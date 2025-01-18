@@ -28,3 +28,6 @@ media/
 
 # OS-specific files
 Thumbs.db
+
+#Misc
+backend/firebase/firebase-adminsdk.json

@@ -9,10 +9,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate(self, data):
-        # Combine date and time fields to validate full datetime
-        appointment_datetime = datetime.combine(data['date'], data['time'])
-
-        if appointment_datetime < timezone.now():
-            raise serializers.ValidationError("The date and time must be in the future.")
-        
-        return data       
+        date_time = timezone.make_aware(
+            timezone.datetime.combine(data['date'], data['time']),
+            timezone.get_current_timezone()
+        )
+        if date_time <= timezone.now():
+            raise serializers.ValidationError("The appointment date and time must be in the future.")
+        return data   

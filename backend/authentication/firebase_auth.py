@@ -1,12 +1,13 @@
 import firebase_admin
-from firebase_admin import auth, credentials
+from firebase_admin import auth, credentials, initialize_app
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.models import User
+import os
 
 # Initialize Firebase Admin
-cred = credentials.Certificate("path/to/your/firebase-adminsdk.json")  # Replace with your Firebase service account key
-firebase_admin.initialize_app(cred)
+cred = credentials.Certificate(os.getenv("FIREBASE_ADMIN_SDK_PATH"))
+initialize_app(cred)
 
 class FirebaseAuthentication(BaseAuthentication):
     def authenticate(self, request):
