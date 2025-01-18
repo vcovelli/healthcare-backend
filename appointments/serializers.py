@@ -1,12 +1,17 @@
 from rest_framework import serializers
-from .models import Appointment
+from .models import Appointment, Profile
 from django.utils import timezone
 from datetime import datetime
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['user', 'role']
 
 class AppointmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
-        fields = '__all__'
+        fields = ['id', 'title', 'date', 'time']
 
     def validate(self, data):
         date_time = timezone.make_aware(
