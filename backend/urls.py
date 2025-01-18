@@ -15,12 +15,12 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.contrib import admin
+from django.http import HttpResponse  # Add this line
+from django.contrib import admin  # Add this line
 from django.urls import path, include
-from django.http import HttpResponse
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("appointments/", include("appointments.urls")), # Include appointment URLs
+    path("api/", include("appointments.urls")), # Include appointment URLs
     path("", lambda request: HttpResponse("Welcome to the Appointments API!")),
 ]
