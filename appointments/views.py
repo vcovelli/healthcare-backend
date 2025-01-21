@@ -6,6 +6,7 @@ from rest_framework import status
 from .models import Appointment
 from .serializers import AppointmentSerializer, ProfileSerializer
 from django.contrib.auth.models import User
+from rest_framework.permissions import AllowAny
 
 
 
@@ -85,17 +86,19 @@ class CreateProfileView(APIView):
     """
     API view to create user profiles.
     Only admins can create profiles for other users.
+
+    Temporarily allowing any authenticated user to create profiles.
     """
+    permission_classes = [permissions.IsAuthenticated]  # Ensure the user is authenticated
 
     def post(self, request, *args, **kwargs):
-        user = request.user
 
         # Check if the requesting user is an admin
-        if not user.is_staff and user.profile.role != 'admin':
-            return Response(
-                {"detail": "Only admins can create profiles."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        #if not user.is_staff and user.profile.role != 'admin':
+            #return Response(
+                #{"detail": "Only admins can create profiles."},
+                #status=status.HTTP_403_FORBIDDEN
+            #)
 
         # Validate the request data and create the profile
         serializer = ProfileSerializer(data=request.data)
@@ -103,13 +106,31 @@ class CreateProfileView(APIView):
 
             # Create the user
             new_user = User.objects.create_user(
-                username=serializer.validated_data["username"],
+                username=serializer.validated_data["email"],
                 password=serializer.validated_data["password"],
                 email=serializer.validated_data["email"]
             )
 
             # Create the profile with the role
-            serializer.save(user=new_user)
+            serializer.save(user=new_user, role=request.data.get("role", "client")) # Default to 'client' if role not provided
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+class ProfileView(APIView):
+    """
+    API view to retrieve the logged-in user's profile.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Fetch the profile for the logged-in user
+        try:
+            profile = request.user.profile  # Assuming a OneToOneField relationship to Profile
+            serializer = ProfileSerializer(profile)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"detail": "Error retrieving profile: " + str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
