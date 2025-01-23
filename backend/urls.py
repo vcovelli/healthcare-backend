@@ -20,7 +20,8 @@ from django.contrib import admin  # Add this line
 from django.urls import path, include
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("api/", include("appointments.urls")), # Include appointment URLs
-    path("", lambda request: HttpResponse("Welcome to the Appointments API!")),
+    path('api/auth/', include('authentication.urls')),  # Prefix for authentication-related endpoints
+    path("admin/", admin.site.urls), # Admin routes
+    path("api/", include("healthcare.urls")), # Healthcare app
+    path("", lambda request: HttpResponse("Welcome to the Healthcare Appointments API!")),
 ]
