@@ -30,4 +30,4 @@ media/
 Thumbs.db
 
 #Misc
-backend/firebase/firebase-adminsdk.json
+healthcare-backend/firebase/firebase-adminsdk.json

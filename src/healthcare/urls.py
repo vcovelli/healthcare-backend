@@ -2,10 +2,10 @@ from django.urls import path
 from .views import ( 
     AppointmentListCreateView,
     AppointmentDetailView,
-    CreateProfileView,
-    ProfileView,
 )
-from authentication.views import LoginView  # Import LoginView from authentication app
+from src.authentication.views import LoginView  # Import LoginView from authentication app
+from src.authentication.views import get_user_role
+from src.authentication.views import CreateProfileView, ProfileView
 
 urlpatterns = [
     path('appointments/', AppointmentListCreateView.as_view(), name='appointment-list-create'),
@@ -13,4 +13,5 @@ urlpatterns = [
     path('profiles/', ProfileView.as_view(), name='profile'),
     path('profiles/create/', CreateProfileView.as_view(), name='create-profile'),
     path('login/', LoginView.as_view(), name='login'),
+    path('auth/role/', get_user_role, name='get_user_role'),
 ]

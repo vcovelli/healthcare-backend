@@ -1,13 +1,112 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions
 from firebase_admin import auth as firebase_auth
 from django.contrib.auth.models import User
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.exceptions import AuthenticationFailed, NotFound
-from .serializers import LoginSerializer, FirebaseTokenSerializer
-from healthcare.models import Profile
+from rest_framework.decorators import api_view, permission_classes
+from .serializers import LoginSerializer, FirebaseTokenSerializer, ProfileSerializer
+from src.users.models import Profile
 import time
+from src.core.utils import validate_token
+from firebase_admin.auth import get_user
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def get_user_role(request):
+    print(f"Authenticated User: {request.user}")  # Debugging
+    profile = validate_token(request)
+    return Response({"role": profile.role}, status=status.HTTP_200_OK)
+
+# View for creating user profiles
+class CreateProfileView(APIView):
+    """
+    API view to create user profiles.
+    Only admins can create profiles for other users.
+    """
+    permission_classes = [permissions.IsAuthenticated]  # Ensure the user is authenticated
+
+    def post(self, request, *args, **kwargs):
+        try:
+            # Log headers and payload
+            print("Request recieved at CreateProfileView")
+            print("Request Data:", request.data)
+
+            # Extract and verify Firebase token
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer "):
+                return Response({"error": "Invalid Authorization header format"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Extract and verify Firebase token from the Authorization header
+            token = auth_header.split(" ")[1]
+            decoded_token = firebase_auth.verify_id_token(token)
+            firebase_uid = decoded_token.get("uid")
+            print("Decoded Token:", decoded_token)
+
+            # Check email verification status
+            firebase_user = get_user(firebase_uid)
+            if not firebase_user.email_verified:
+                return Response({"error": "Please verify your email before logging in."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Extract email, password, and role from request data
+            email = request.data.get("email")
+            password = request.data.get("password")
+            role = request.data.get("role", "client")  # Default role is 'client'
+
+            if not email or not password:
+                return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if the user already exists
+            if User.objects.filter(username=firebase_uid).exists():
+                return Response(
+                    {"error": "A user with this Firebase UID already exists."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Create Django user
+            new_user = User.objects.create_user(
+                username=firebase_uid, # Firebase UID as the username
+                password=password,
+                email=email,
+            )
+
+            # Create profile
+            profile = Profile.objects.create(
+                user=new_user,
+                role=role,
+                firebase_uid=firebase_uid,
+            )
+
+            # Validate the request data and create the profile
+            serializer = ProfileSerializer(profile)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+        except ValueError as e:
+            print("Firebase Authentication Error:", str(e))  # Debug log for Firebase auth errors
+            return Response({"error": f"Firebase validation error: {str(e)}"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        except Exception as e:
+            print("General Error:", str(e))  # Debug log for general errors
+            return Response({"error": "An unexpected error occurred. Please try again later."}, status=status.HTTP_400_BAD_REQUEST)
+
+class ProfileView(APIView):
+    """
+    API view to retrieve the logged-in user's profile.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # Fetch the profile for the logged-in user
+            profile = request.user.profile  # Assuming a OneToOneField relationship to Profile
+            serializer = ProfileSerializer(profile)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Profile.DoesNotExist:
+            return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            print("General Error:", str(e))  # Debug log for general errors
+            return Response({"error": "An unexpected error occurred. Please try again later."},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class LoginView(APIView):
     """

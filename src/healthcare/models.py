@@ -3,26 +3,15 @@ from django.utils.timezone import now
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from src.users.models import Profile
 
-class Profile(models.Model):
-    ROLE_CHOICES = [
-        ('admin', 'Admin'),
-        ('staff', 'Staff'),
-        ('client', 'Client'),
-    ]
-
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='client')
-    firebase_uid = models.CharField(max_length=255, unique=True, null=True, blank=True)  # Add Firebase UID field
-
-    def __str__(self):
-        return f"{self.user.username} - {self.role}"
     
 # Signal to automatically create or update the Profile model whenever a User is created or saved
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
-    if created and not hasattr(instance, 'profile'): # Avoid duplicate creation
-        Profile.objects.create(user=instance, role='client')
+    if created and not hasattr(instance, 'profile'):  # Avoid duplicate creation
+        firebase_uid = instance.username  # Assuming Firebase UID is stored in `username`
+        Profile.objects.create(user=instance, role='client', firebase_uid=firebase_uid)
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):    
