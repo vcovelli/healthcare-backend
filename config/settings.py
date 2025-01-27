@@ -30,9 +30,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-tf^(ac0%k#unr68s&57)i!^y%0r!n01628v)+p7+yegw4*2%u*"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['healthcare-backend-0092.onrender.com', '127.0.0.1', 'localhost']
+
+CSRF_TRUSTED_ORIGINS = ['https://healthcare-backend-0092.onrender.com']
 
 
 # Application definition
@@ -71,6 +73,7 @@ CORS_ORIGIN_WHITELIST = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://healthcare-backend-0092.onrender.com",
 ]
 
 CORS_ALLOW_HEADERS = [
