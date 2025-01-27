@@ -11,7 +11,7 @@ def validate_token(request):
 
     token = auth_header.split(" ")[1]
     try:
-        decoded_token = firebase_auth.verify_id_token(token, check_revoked=True, leeway=60)  # Decode the token
+        decoded_token = firebase_auth.verify_id_token(token, check_revoked=True)  # Decode the token
         print("Decoded Token:", decoded_token)  # Debugging
         firebase_uid = decoded_token.get("uid")
         if not firebase_uid:
