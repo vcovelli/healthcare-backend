@@ -12,6 +12,5 @@ urlpatterns = [
     path('appointments/<int:pk>/', AppointmentDetailView.as_view(), name='appointment-detail'),
     path('profiles/', ProfileView.as_view(), name='profile'),
     path('profiles/create/', CreateProfileView.as_view(), name='create-profile'),
-    path('login/', LoginView.as_view(), name='login'),
     path('auth/role/', get_user_role, name='get_user_role'),
 ]
