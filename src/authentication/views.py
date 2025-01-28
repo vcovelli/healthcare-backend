@@ -136,19 +136,17 @@ class LoginView(APIView):
             current_time = time.time()
             issued_at = decoded_token.get('iat', 0)
             expiration_time = decoded_token.get('exp', 0)
-
-            # Check for token validity with clock skew
             clock_skew = 60  # Allow 60 seconds of clock skew
             if issued_at > current_time + clock_skew or expiration_time < current_time - clock_skew:
                 raise AuthenticationFailed("Firebase Authentication failed: Token used outside the allowed time window.")
 
+            # Extract user information
             user_id = decoded_token.get('uid')
             email = decoded_token.get('email')
-
-            print("UID:", user_id, "Email:", email)  # **Debug: Print UID and email**
-
             if not email:
                 raise AuthenticationFailed("Email not found in Firebase token.")
+
+            print("UID:", user_id, "Email:", email)  # Debug: Print UID and email
             
             # Check if the user already exists
             user, created = User.objects.get_or_create(
@@ -164,7 +162,6 @@ class LoginView(APIView):
             )
             print(f"Profile {'created' if profile_created else 'exists'}: {profile.role}")
             
-
             # Return success response
             return Response({
                 "message": "Login successful",
@@ -174,7 +171,7 @@ class LoginView(APIView):
             })
 
         except Exception as e:
-            print("Error during authentication:", str(e))  # **Debug: Print errors**
+            print("Error during authentication:", str(e))  # Debug: Print errors
             raise AuthenticationFailed(f"Firebase Authentication failed: {str(e)}")
         
 class VerifyFirebaseTokenView(APIView):
