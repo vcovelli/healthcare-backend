@@ -112,6 +112,15 @@ class AppointmentDetailView(generics.RetrieveUpdateDestroyAPIView):
         except Exception as e:
             print("Validation Error:", str(e))
             return Response({"error": str(e)}, status=400)
+        
+        # Check profile and role
+        try:
+            profile = validate_token(self.request)  # Returns a Profile object
+            role = profile.role  # Directly access the role attribute
+            print("Profile Role:", role)
+        except Exception as e:
+            print("Error fetching Profile or Role:", str(e))
+        return Response({"error": "Invalid user profile or role."}, status=403)
 
         # Call the parent PUT method to perform the update
         try:
