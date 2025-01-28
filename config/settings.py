@@ -74,6 +74,7 @@ CORS_ORIGIN_WHITELIST = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://healthcare-backend-0092.onrender.com",
+    "https://healthcare-frontend-sable.vercel.app",
 ]
 
 CORS_ALLOW_HEADERS = [
