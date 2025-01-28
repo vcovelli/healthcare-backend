@@ -99,12 +99,26 @@ class AppointmentDetailView(generics.RetrieveUpdateDestroyAPIView):
         """
         Override PUT to log details and call the parent method.
         """
+        
         appointment_id = kwargs.get("pk")  # Get the appointment ID from the URL
         print("Updating Appointment ID:", appointment_id) # Debugging
         print("Request Data:", request.data) # Debugging the payload
+        
+        # Validate Data
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            print("Validated Data:", serializer.validated_data)
+        except Exception as e:
+            print("Validation Error:", str(e))
+            return Response({"error": str(e)}, status=400)
 
         # Call the parent PUT method to perform the update
-        return super().put(request, *args, **kwargs)
+        try:
+            return super().put(request, *args, **kwargs)
+        except Exception as e:
+            print("Error during PUT:", str(e))
+            return Response({"error": str(e)}, status=500)
 
 # Path to your Firebase credentials JSON file
 try:
