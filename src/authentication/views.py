@@ -207,14 +207,14 @@ class RoleView(APIView):
     """
     View to retrieve the role of the authenticated user.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         user = request.user
 
         try:
             # Retrieve the role from the associated Profile model
-            role = user.profile.role
+            role = request.user.profile.role
             return Response({"role": role}, status=200)
         except AttributeError:
             raise NotFound("User profile not found. Role cannot be determined.")

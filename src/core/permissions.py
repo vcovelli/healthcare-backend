@@ -24,14 +24,19 @@ class IsAdminOrOwner(permissions.BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
-        role = validate_token(request).get("role", "client")
-        print("Role in Permission Check:", role)  # Debugging role
-        print("Object User:", obj.user, "Request User:", request.user)  # Debugging object ownership
-
-        if role == 'admin':
-            return True  # Admins can access everything
-        elif role == 'staff':
-            return obj.staff == request.user # Staff can access appointments associated with them
-        elif role == 'client': 
-            return obj.user == request.user # Clients can only access their own appointments
-        return False
+        try:
+            profile = validate_token(request)  # Validate the token and fetch the profile
+            if not profile:
+                return False
+            role = profile.role  # Extract the role from the profile
+            print("Role in Permission Check:", role)
+            if role == 'admin':
+                return True
+            elif role == 'staff':
+                return obj.staff == request.user
+            elif role == 'client':
+                return obj.user == request.user
+            return False
+        except Exception as e:
+            print("Error in IsAdminOrOwner:", str(e))
+            return False
