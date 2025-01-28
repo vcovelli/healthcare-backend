@@ -11,7 +11,11 @@ from datetime import datetime
 from rest_framework.decorators import api_view, permission_classes
 from src.core.utils import validate_token
 from src.core.permissions import IsAdminOrOwner
+import os
+import json
+from dotenv import load_dotenv
 
+load_dotenv()
 
 # View for listing and creating appointments
 class AppointmentListCreateView(generics.ListCreateAPIView):
@@ -106,8 +110,13 @@ class AppointmentDetailView(generics.RetrieveUpdateDestroyAPIView):
 try:
     get_app()
 except ValueError:
-    cred = credentials.Certificate("C:/Users/Vince/Documents/GitHub/appointment-scheduler/healthcare-backend/backend/firebase/firebase-adminsdk.json")
+    # Load Firebase credentials from environment variable
+    firebase_credentials = os.getenv("FIREBASE_CREDENTIALS")
+    if not firebase_credentials:
+        raise ValueError("FIREBASE_CREDENTIALS environment variable is missing")
+    
+    # Convert JSON string to dictionary and initialize Firebase
+    cred = credentials.Certificate(json.loads(firebase_credentials))
     initialize_app(cred)
 
 print("Firebase Initialized Successfully")
-        
