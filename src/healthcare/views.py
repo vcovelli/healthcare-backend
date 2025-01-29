@@ -120,7 +120,7 @@ class AppointmentDetailView(generics.RetrieveUpdateDestroyAPIView):
             print("Profile Role:", role)
         except Exception as e:
             print("Error fetching Profile or Role:", str(e))
-        return Response({"error": "Invalid user profile or role."}, status=403)
+            return Response({"error": "Invalid user profile or role."}, status=403)
 
         # Call the parent PUT method to perform the update
         try:

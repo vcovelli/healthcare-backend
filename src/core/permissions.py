@@ -25,11 +25,19 @@ class IsAdminOrOwner(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         try:
+            print(f"Before Token Validation - Request User: {request.user}")  # Debug log
+
             profile = validate_token(request)  # Validate the token and fetch the profile
             if not profile:
+                print("Profile not found for the request.")
                 return False
-            role = profile.role  # Extract the role from the profile
-            print("Role in Permission Check:", role)
+            
+
+            role = profile.role
+            print(f"Role in Permission Check: {role}")
+            print(f"After Token Validation - Request User: {request.user}")  # Debug log
+
+            print(f"Object User: {obj.user}, Request User: {request.user}")
             if role == 'admin':
                 return True
             elif role == 'staff':

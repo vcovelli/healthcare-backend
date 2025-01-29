@@ -35,6 +35,10 @@ def validate_token(request):
         except MultipleObjectsReturned:
             print(f"Multiple profiles found for UID: {firebase_uid}")
             raise PermissionDenied("Multiple profiles found for the same UID. Please contact support.")
+        
+        # Assign the corresponding user to the request
+        request.user = profile.user  # Set the authenticated user for the request
+        print(f"Request User Set Inside validate_token: {request.user}")  # Debugging
 
         print(f"Validated Profile: {profile.user.username} - {profile.role}")  # Debugging
         return profile

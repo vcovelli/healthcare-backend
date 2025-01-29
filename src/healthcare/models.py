@@ -23,7 +23,8 @@ class Appointment(models.Model):
     title = models.CharField(max_length=225)
     date = models.DateField(default=now) # Set a default date
     time = models.TimeField(default=now) # Set a default time
-    user = models.ForeignKey('auth.User', on_delete=models.CASCADE) # Link to the User model
+    user = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name="appointments")
+    staff = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name="staff_appointments")
 
     def __str__(self):
         return self.title
