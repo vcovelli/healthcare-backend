@@ -6,107 +6,51 @@ from django.contrib.auth.models import User
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.exceptions import AuthenticationFailed, NotFound
 from rest_framework.decorators import api_view, permission_classes
-from .serializers import LoginSerializer, FirebaseTokenSerializer, ProfileSerializer
+from .serializers import LoginSerializer, FirebaseTokenSerializer
 from src.users.models import Profile
 import time
 from src.core.utils import validate_token
-from firebase_admin.auth import get_user
+from django.http import JsonResponse
 
-@api_view(["POST"])
-@permission_classes([permissions.IsAuthenticated])
-def get_user_role(request):
-    print(f"Authenticated User: {request.user}")  # Debugging
-    profile = validate_token(request)
-    return Response({"role": profile.role}, status=status.HTTP_200_OK)
-
-# View for creating user profiles
-class CreateProfileView(APIView):
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_user_profile(request):
     """
-    API view to create user profiles.
-    Only admins can create profiles for other users.
+    Returns the profile of the authenticated user.
     """
-    permission_classes = [permissions.IsAuthenticated]  # Ensure the user is authenticated
-
-    def post(self, request, *args, **kwargs):
-        try:
-            # Log headers and payload
-            print("Request recieved at CreateProfileView")
-            print("Request Data:", request.data)
-
-            # Extract and verify Firebase token
-            auth_header = request.headers.get("Authorization", "")
-            if not auth_header.startswith("Bearer "):
-                return Response({"error": "Invalid Authorization header format"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Extract and verify Firebase token from the Authorization header
-            token = auth_header.split(" ")[1]
-            decoded_token = firebase_auth.verify_id_token(token)
-            firebase_uid = decoded_token.get("uid")
-            print("Decoded Token:", decoded_token)
-
-            # Check email verification status
-            firebase_user = get_user(firebase_uid)
-            if not firebase_user.email_verified:
-                return Response({"error": "Please verify your email before logging in."}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Extract email, password, and role from request data
-            email = request.data.get("email")
-            password = request.data.get("password")
-            role = request.data.get("role", "client")  # Default role is 'client'
-
-            if not email or not password:
-                return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Check if the user already exists
-            if User.objects.filter(username=firebase_uid).exists():
-                return Response(
-                    {"error": "A user with this Firebase UID already exists."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # Create Django user
-            new_user = User.objects.create_user(
-                username=firebase_uid, # Firebase UID as the username
-                password=password,
-                email=email,
-            )
-
-            # Create profile
-            profile = Profile.objects.create(
-                user=new_user,
-                role=role,
-                firebase_uid=firebase_uid,
-            )
-
-            # Validate the request data and create the profile
-            serializer = ProfileSerializer(profile)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    auth_header = request.headers.get("Authorization")
     
-        except ValueError as e:
-            print("Firebase Authentication Error:", str(e))  # Debug log for Firebase auth errors
-            return Response({"error": f"Firebase validation error: {str(e)}"}, status=status.HTTP_401_UNAUTHORIZED)
+    if not auth_header or not auth_header.startswith("Bearer "):
+        print("Missing or invalid Authorization header")
+        return JsonResponse({"error": "Missing or invalid Authorization header"}, status=403)
 
-        except Exception as e:
-            print("General Error:", str(e))  # Debug log for general errors
-            return Response({"error": "An unexpected error occurred. Please try again later."}, status=status.HTTP_400_BAD_REQUEST)
+    token = auth_header.split("Bearer ")[1]
+    print(f"Received Firebase Token: {token}")  # Debugging
 
-class ProfileView(APIView):
-    """
-    API view to retrieve the logged-in user's profile.
-    """
-    permission_classes = [permissions.IsAuthenticated]
+    try:
+        decoded_token = firebase_auth.verify_id_token(token)
+        uid = decoded_token["uid"]
 
-    def get(self, request):
+        print(f"Firebase UID: {uid}")
+
+        # Fetch user profile from database
         try:
-            # Fetch the profile for the logged-in user
-            profile = request.user.profile  # Assuming a OneToOneField relationship to Profile
-            serializer = ProfileSerializer(profile)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            profile = Profile.objects.get(firebase_uid=uid)
+            return JsonResponse({
+                "first_name": profile.first_name,
+                "last_name": profile.last_name,
+                "email": profile.email,
+                "phone_number": profile.phone_number,
+                "role": profile.role,
+                "profile_completed": profile.profile_completed
+            })
         except Profile.DoesNotExist:
-            return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            print("General Error:", str(e))  # Debug log for general errors
-            return Response({"error": "An unexpected error occurred. Please try again later."},status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            print("No profile found for this Firebase UID.")
+            return JsonResponse({"error": "User profile not found"}, status=404)
+
+    except Exception as e:
+        print(f"Error verifying Firebase token: {e}")
+        return JsonResponse({"error": "Invalid Firebase token"}, status=403)
 
 class LoginView(APIView):
     """
@@ -209,12 +153,28 @@ class RoleView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request):
-        user = request.user
+    def get(self, request):
+        auth_header = request.headers.get("Authorization")
+
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return Response({"error": "Missing or invalid Authorization header"}, status=403)
+
+        token = auth_header.split("Bearer ")[1]
+        print(f"Received Firebase Token: {token}")  # Debugging
 
         try:
-            # Retrieve the role from the associated Profile model
-            role = request.user.profile.role
-            return Response({"role": role}, status=200)
-        except AttributeError:
-            raise NotFound("User profile not found. Role cannot be determined.")
+            decoded_token = firebase_auth.verify_id_token(token)
+            uid = decoded_token["uid"]
+            print(f"Firebase UID: {uid}")
+
+            # Fetch user profile from database
+            try:
+                profile = Profile.objects.get(firebase_uid=uid)
+                return Response({"role": profile.role})
+            except Profile.DoesNotExist:
+                print("No profile found for this Firebase UID.")
+                return Response({"error": "User profile not found"}, status=404)
+
+        except Exception as e:
+            print(f"Error verifying Firebase token: {e}")
+            return Response({"error": "Invalid Firebase token"}, status=403)
