@@ -19,6 +19,7 @@ def get_user_profile(request):
     Returns the profile of the authenticated user.
     """
     auth_header = request.headers.get("Authorization")
+    print(f"Authorization Header: {auth_header}")  # Debugging
     
     if not auth_header or not auth_header.startswith("Bearer "):
         print("Missing or invalid Authorization header")
@@ -30,24 +31,23 @@ def get_user_profile(request):
     try:
         decoded_token = firebase_auth.verify_id_token(token)
         uid = decoded_token["uid"]
-
         print(f"Firebase UID: {uid}")
 
-        # Fetch user profile from database
-        try:
-            profile = Profile.objects.get(firebase_uid=uid)
-            return JsonResponse({
-                "first_name": profile.first_name,
-                "last_name": profile.last_name,
-                "email": profile.email,
-                "phone_number": profile.phone_number,
-                "role": profile.role,
-                "profile_completed": profile.profile_completed
-            })
-        except Profile.DoesNotExist:
-            print("No profile found for this Firebase UID.")
-            return JsonResponse({"error": "User profile not found"}, status=404)
+        # Fetch user profile
+        profile = Profile.objects.get(firebase_uid=uid)
+        print(f"Profile found for UID: {uid}")
 
+        return JsonResponse({
+            "first_name": profile.first_name,
+            "last_name": profile.last_name,
+            "email": profile.email,
+            "phone_number": profile.phone_number,
+            "role": profile.role,
+            "profile_completed": profile.profile_completed
+        })
+    except Profile.DoesNotExist:
+        print(f"No profile found for UID: {uid}")
+        return JsonResponse({"error": "User profile not found"}, status=404)
     except Exception as e:
         print(f"Error verifying Firebase token: {e}")
         return JsonResponse({"error": "Invalid Firebase token"}, status=403)
