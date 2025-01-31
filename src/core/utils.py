@@ -2,6 +2,10 @@ from rest_framework.exceptions import PermissionDenied
 from firebase_admin import auth as firebase_auth
 from src.users.models import Profile
 from django.core.exceptions import MultipleObjectsReturned
+from django.utils import timezone
+from datetime import datetime
+from rest_framework.exceptions import ValidationError
+from rest_framework import serializers
 
 def validate_token(request):
     # Ensure Authorization header exists
@@ -51,3 +55,70 @@ def validate_token(request):
     except Exception as e:
         print("Unexpected validation error:", str(e))
         raise PermissionDenied("Unexpected error during token validation")
+    
+def parse_and_validate_date(date_str):
+    """
+    Parses a date string and ensures it's in the correct format (MM-DD-YYYY or YYYY-MM-DD).
+    Returns a valid date object.
+    """
+    if isinstance(date_str, str):
+        try:
+            # Try YYYY-MM-DD first
+            return datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            try:
+                # Fall back to MM-DD-YYYY
+                return datetime.strptime(date_str, "%m-%d-%Y").date()
+            except ValueError:
+                raise ValidationError({"date": "Date must be in MM-DD-YYYY or YYYY-MM-DD format."})
+    return date_str
+
+
+def validate_future_date_time(date, time):
+    """
+    Combines date and time, and checks if the result is in the future.
+    """
+    date_time = timezone.make_aware(
+        timezone.datetime.combine(date, time),
+        timezone.get_current_timezone()
+    )
+    if date_time <= timezone.now():
+        raise ValidationError("The appointment date and time must be in the future.")
+    
+def validate_profile_data(first_name, last_name, phone_number):
+    """
+    Validates profile data for required fields.
+    """
+    errors = {}
+
+    if not first_name or not first_name.strip():
+        errors['first_name'] = "First name is required."
+
+    if not last_name or not last_name.strip():
+        errors['last_name'] = "Last name is required."
+
+    if not phone_number or not phone_number.strip():
+        errors['phone_number'] = "Phone number is required."
+
+    if errors:
+        raise ValidationError(errors)
+    
+def validate_phone_number_format(value):
+    """
+    Validate phone number format.
+    """
+    import re
+    if not re.match(r"^\+?1?\d{9,15}$", value):
+        raise serializers.ValidationError(
+            "Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed."
+        )
+    return value
+
+def validate_unique_email(value, instance=None):
+    """
+    Validate email is unique across profiles.
+    """
+    from src.healthcare.models import Profile  # Import here to avoid circular imports
+    if Profile.objects.filter(email=value).exclude(id=instance.id if instance else None).exists():
+        raise serializers.ValidationError("A profile with this email already exists.")
+    return value
