@@ -2,8 +2,9 @@ from rest_framework import generics, permissions, status, serializers
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Appointment, Profile
-from .serializers import AppointmentSerializer, ProfileSerializer
+from src.users.models import Profile
+from src.healthcare.models import Appointment
+from .serializers import AppointmentSerializer
 from django.contrib.auth.models import User
 from firebase_admin import auth as firebase_auth, credentials, initialize_app, get_app
 from firebase_admin.auth import get_user, verify_id_token

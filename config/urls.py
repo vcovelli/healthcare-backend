@@ -18,10 +18,17 @@ Including another URLconf
 from django.http import HttpResponse  # Add this line
 from django.contrib import admin  # Add this line
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
-    path('api/auth/', include('src.authentication.urls')),  # Authentication endpoints
     path("admin/", admin.site.urls), # Admin panel
     path("api/", include("src.healthcare.urls")), # Healthcare app endpoints
+    path('api/auth/', include('src.authentication.urls')),  # Authentication endpoints
+    path('api/users/', include('src.users.urls')), 
     path("", lambda request: HttpResponse("Welcome to the Healthcare Appointments API!")),
 ]
+
+# Serve static files in development
+if settings.DEBUG:  # Only do this in development
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
