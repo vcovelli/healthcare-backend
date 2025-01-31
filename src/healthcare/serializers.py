@@ -11,14 +11,16 @@ class AppointmentSerializer(serializers.ModelSerializer):
     staff = serializers.StringRelatedField()
     class Meta:
         model = Appointment
-        fields = ['id', 'title', 'date', 'time', 'user', 'staff']
+        fields = ['id', 'title', 'appointment_date', 'time', 'user', 'staff', 'status', 'created_at', 'updated_at']
 
     def validate(self, data):
+        validated_data = data.copy()
+        
         # Parse and validate the date
-        data['date'] = parse_and_validate_date(data['date'])
+        validated_data['appointment_date'] = parse_and_validate_date(validated_data['appointment_date'])
 
         # Validate future date and time
-        validate_future_date_time(data['date'], data['time'])
+        validate_future_date_time(validated_data['appointment_date'], validated_data['time'])
 
-        return data
+        return validated_data
     

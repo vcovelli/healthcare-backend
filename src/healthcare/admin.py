@@ -9,6 +9,6 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
-    list_display = ('title', 'date', 'time', 'user')  # Columns to display
+    list_display = ("id", "appointment_date", "title", "user", "staff", "status")  # Columns to display
     search_fields = ('title', 'user__username')  # Enable search
-    list_filter = ('date',)  # Add filter options
+    list_filter = ("appointment_date",)  # Add filter options
