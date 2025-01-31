@@ -121,21 +121,34 @@ class UpdateProfileView(generics.RetrieveUpdateAPIView):
                 raise NotAuthenticated("Profile not found.")
         return self.request.user.profile
     
-    def put(self, request):
+    def patch(self, request, *args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return Response({"error": "Missing or invalid Authorization header"}, status=403)
+
+        token = auth_header.split("Bearer ")[1]
+
         try:
-            user = request.user
-            profile = user.profile
+            # Verify the Firebase token
+            decoded_token = firebase_auth.verify_id_token(token)
+            uid = decoded_token["uid"]
 
-            # Update profile fields
-            profile.first_name = request.data.get("first_name", profile.first_name)
-            profile.last_name = request.data.get("last_name", profile.last_name)
-            profile.phone_number = request.data.get("phone_number", profile.phone_number)
-            profile.profile_completed = request.data.get("profile_completed", profile.profile_completed)
+            # Fetch the user's profile
+            profile = Profile.objects.get(firebase_uid=uid)
 
-            # Save the updated profile
-            profile.save()
+            # Populate the email field if it doesn't exist
+            if not profile.email:
+                profile.email = decoded_token.get("email", "")
+                profile.save()
 
-            return Response({"message": "Profile updated successfully!"}, status=status.HTTP_200_OK)
+            # Update the profile with the provided data
+            serializer = ProfileSerializer(profile, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        except Profile.DoesNotExist:
+            return Response({"error": "User profile not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
