@@ -129,23 +129,36 @@ class UpdateProfileView(generics.RetrieveUpdateAPIView):
         token = auth_header.split("Bearer ")[1]
 
         try:
-            # Verify the Firebase token
+            # Verify Firebase token
             decoded_token = firebase_auth.verify_id_token(token)
             uid = decoded_token["uid"]
 
             # Fetch the user's profile
             profile = Profile.objects.get(firebase_uid=uid)
 
-            # Populate the email field if it doesn't exist
-            if not profile.email:
-                profile.email = decoded_token.get("email", "")
-                profile.save()
+            # Update the email field with Firebase email
+            profile.email = decoded_token.get("email", "")
 
-            # Update the profile with the provided data
+            # Apply updates from request
             serializer = ProfileSerializer(profile, data=request.data, partial=True)
             if serializer.is_valid():
-                serializer.save()
+                updated_profile = serializer.save()
+
+                # Sync with Django `auth_user`
+                user = profile.user  # Get the related User model
+                user.first_name = updated_profile.first_name
+                user.last_name = updated_profile.last_name
+                user.email = updated_profile.email  # Ensure Firebase email is stored
+                user.save()  # Save User model updates
+
+                # Check if profile is complete
+                required_fields = ["first_name", "last_name", "phone_number"]
+                if all(getattr(updated_profile, field, None) for field in required_fields):
+                    updated_profile.profile_completed = True
+                    updated_profile.save()
+
                 return Response(serializer.data, status=status.HTTP_200_OK)
+
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         except Profile.DoesNotExist:
