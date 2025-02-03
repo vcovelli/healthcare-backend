@@ -8,6 +8,8 @@ A backend service built with **Django** and **Django REST Framework** to manage 
 - RESTful API for managing appointments.
 - Admin panel for creating, reading, updating, and deleting appointments.
 - API endpoints for CRUD operations.
+- Authentication for secure access.
+- Support for PostgreSQL in production.
 
 ---
 
@@ -29,19 +31,27 @@ source venv/bin/activate  # For Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### **4. Apply Database Migrations**
+### **4. Configure Enviornment Variables**
+Create a .env file in the root directory and set the following variables:
+```bash
+SECRET_KEY=your_secret_key
+DEBUG=True  # Set to False in production
+DATABASE_URL=sqlite:///db.sqlite3  # Use PostgreSQL in production
+```
+
+### **5. Apply Database Migrations**
 ```bash
 python manage.py makemigrations
 python manage.py migrate
 ```
 
-### **5. Create a Superuser**
+### **6. Create a Superuser**
 ```bash
 python manage.py createsuperuser
 ```
 Follow the prompts to set up a username, email, and password.
 
-### **6. Start the Development Server**
+### **7. Start the Development Server**
 ```bash
 python manage.py runserver
 ```
@@ -96,6 +106,29 @@ POST /appointments/
     "updated_at": "2025-01-10T20:58:03.192615Z"
 }
 ```
+### **3. Retrieve a Single Appointment**
+```http
+GET /appointments/{id}/
+```
+**Description:** Fetch details of a single appointment by ID.
+
+### **4. Update an Appointment**
+```http
+PUT /appointments/{id}/
+```
+**Description:** Update an appointment by ID.
+**Request Body:**
+```{
+    "title": "Updated Appointment",
+    "description": "Updated description",
+    "date_time": "2025-01-20T15:00:00Z"
+}
+```
+### **5. Delete an Appointment**
+```http
+DELETE /appointments/{id}/
+```
+**Description:** Delete an appointment by ID.
 
 ## **Admin Panel**
 
@@ -103,8 +136,24 @@ POST /appointments/
 - **Credentials**: Use the superuser account created earlier.
 - **Features**: Manage appointments (create, edit, delete) via the admin interface.
 
+## **Testing**
+
+### **Run Tests**
+
+To run test, execute the following command:
+```
+python manage.py test
+```
+
 ## **Technologies Used**
 
 - **Django**: Python web framework.
 - **Django REST Framework**: For building REST APIs.
 - **SQLite**: Default database for local development.
+
+## **Deployment**
+
+### **1. Prepare for Deployment**
+- Set DEBUG=False in the .env file..
+- Use a production-ready database like PostgreSQL.
+- Configure a web server like Gunicorn or uWSGI.
